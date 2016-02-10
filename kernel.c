@@ -8,4 +8,5 @@ void main()
 {
   terminal_initialize();
   terminal_writestring("Hello World from KissOs v.0D!\n"); // No newline support(yet), we get some VGA char
+  terminal_writestring("More stuff");
 }

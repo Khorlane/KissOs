@@ -1,4 +1,4 @@
 # KissOs
 Keep It Simple Stupid Operating System
 
-This is a clone of the Minix, but built one file at a time, starting with booter and a super simple 'Hello' kernel.
+KissOs is a no-GRUB OS which began by following Nick Blundell's "Writing a Simple Operating System from Scratch".

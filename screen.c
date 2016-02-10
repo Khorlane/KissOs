@@ -37,7 +37,7 @@ unsigned int    y;
 unsigned int    datalen;
 
 // ********************************************
-// Terminal Initialize and supporting functions
+// Supporting functions
 // ********************************************
 
 unsigned char make_color(enum vga_color fg, enum vga_color bg)
@@ -51,6 +51,10 @@ unsigned short make_vgaentry(char c, unsigned char color)
   color16 = color;
   return c16 | color16 << 8;
 }
+
+// *******************
+// Terminal Initialize
+// *******************
  
 void terminal_initialize()
 {
@@ -80,11 +84,19 @@ void terminal_putentryat(char c)
 
 void terminal_putchar(char c)
 {
+  if (c == '\n')
+  {
+    terminal_row++;
+    terminal_column = 0;
+    return;
+  }
   terminal_putentryat(c);
-  if (++terminal_column == VGA_WIDTH)
+  terminal_column++;
+  if (terminal_column == VGA_WIDTH)
   {
     terminal_column = 0;
-    if (++terminal_row == VGA_HEIGHT)
+    terminal_row++;
+    if (terminal_row == VGA_HEIGHT)
     {
       terminal_row = 0;
     }

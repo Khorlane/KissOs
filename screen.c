@@ -1,4 +1,4 @@
-// Hardware text mode color constants
+// Hardware text mode Color constants
 #define BLACK         0x00
 #define BLUE          0x01
 #define GREEN         0x02
@@ -20,16 +20,18 @@
 #define VGA_HEIGHT 25
  
 // Global Variables
-unsigned int    terminal_row;
-unsigned int    terminal_column;
-unsigned char   color;
-         char*  TermBuff;
-unsigned int		len;
-unsigned int    index;
+unsigned int    ScrnRow;
+unsigned int    ScrnCol;
+unsigned char   Color;
+         char*  ScrnBuff;
+unsigned int		Len;
+unsigned int    Index;
 unsigned int    i;
 unsigned int    x;
 unsigned int    y;
 unsigned int    CursorLoc;
+unsigned char   fg;
+unsigned char   bg;
 
 void outb(unsigned short port, unsigned char value)
 {
@@ -38,90 +40,112 @@ void outb(unsigned short port, unsigned char value)
 
 void MoveCursor()
 {
-  CursorLoc = terminal_row * 80 + terminal_column;
+  CursorLoc = ScrnRow * 80 + ScrnCol;
   outb(0x3D4, 14);
   outb(0x3D5, CursorLoc >> 8);
   outb(0x3D4, 15);
   outb(0x3D5, CursorLoc);
 }
 
-// ********************************************
-// Supporting functions
-// ********************************************
+// *****************************
+// MakeColor - combine fg and bg
+// *****************************
 
-void make_color(unsigned char fg, unsigned char bg)
+void MakeColor()
 {
-  color = bg;
-  color = color << 4;
-  color = color | fg;
+  Color = bg;
+  Color = Color << 4;
+  Color = Color | fg;
 }
 
-void terminal_putentryat(char c)
+// ********************************
+// StrLen - return length of string
+// ********************************
+unsigned int StrLen(const char* str)
 {
-  index = terminal_row * VGA_WIDTH + terminal_column;
-  index = index * 2;
-  TermBuff[index] = c;
-  index++;
-  TermBuff[index] = color;
+  unsigned int Len;
+  Len = 0;
+  while (str[Len] != 0)
+    Len++;
+  return Len;
 }
 
-// *******************
-// Terminal Initialize
-// *******************
+// *********************************
+// ScrnPutCell - put char plus color
+// *********************************
+
+void ScrnPutCell(char c)
+{
+  Index = ScrnRow * VGA_WIDTH + ScrnCol;
+  Index = Index * 2;
+  ScrnBuff[Index] = c;
+  Index++;
+  ScrnBuff[Index] = Color;
+}
+
+// *************************************
+// ScrnClear - write blanks to all cells
+// *************************************
  
-void terminal_initialize()
+void ScrnClear()
 {
-  make_color(LIGHT_BLUE, BLACK);
-  TermBuff = (char*) 0xB8000;
-  for (terminal_row = 0; terminal_row < VGA_HEIGHT; terminal_row++)
+  fg = LIGHT_GREY;
+  bg = BLACK;
+  MakeColor();
+  ScrnBuff = (char*) 0xB8000;
+  for (ScrnRow = 0; ScrnRow < VGA_HEIGHT; ScrnRow++)
   {
-    for (terminal_column = 0; terminal_column < VGA_WIDTH; terminal_column++)
+    for (ScrnCol = 0; ScrnCol < VGA_WIDTH; ScrnCol++)
     {
-      terminal_putentryat(' ');
+      ScrnPutCell(' ');
     }
   }
-  terminal_row    = 0;
-  terminal_column = 0;
+  ScrnRow    = 0;
+  ScrnCol = 0;
 }
 
-// *************************************
-// Write String and supporting functions
-// *************************************
+// ***************************
+// ScrnPutChar - put character
+// ***************************
 
-void terminal_putchar(char c)
+void ScrnPutChar(char c)
 {
-  if (c == '\n')
+  if (c == 'c')
   {
-    terminal_row++;
-    terminal_column = 0;
+    fg = LIGHT_CYAN;
+    MakeColor();
     return;
   }
-  terminal_putentryat(c);
-  terminal_column++;
-  if (terminal_column == VGA_WIDTH)
+  if (c == 'n')
   {
-    terminal_column = 0;
-    terminal_row++;
-    if (terminal_row == VGA_HEIGHT)
+    fg = LIGHT_GREY;
+    MakeColor();
+    return;
+  }
+  if (c == '\n')
+  {
+    ScrnRow++;
+    ScrnCol = 0;
+    return;
+  }
+  ScrnPutCell(c);
+  ScrnCol++;
+  if (ScrnCol == VGA_WIDTH)
+  {
+    ScrnCol = 0;
+    ScrnRow++;
+    if (ScrnRow == VGA_HEIGHT)
     {
-      terminal_row = 0;
+      ScrnRow = 0;
     }
   }
 }
- 
-unsigned int strlen(const char* str)
-{
-  unsigned int len;
-  len = 0;
-  while (str[len] != 0)
-    len++;
-  return len;
-}
 
-void terminal_writestring(const char* data)
+// ScrnWrite - write string to termianl
+void ScrnWrite(const char* data)
 {
-  len = strlen(data);
-  for (i = 0; i < len; i++)
-    terminal_putchar(data[i]);
+  Len = StrLen(data);
+  for (i = 0; i < Len; i++)
+    ScrnPutChar(data[i]);
   MoveCursor();
 }

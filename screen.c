@@ -13,38 +13,47 @@
 #define LIGHT_CYAN    0x0B
 #define LIGHT_RED     0x0C
 #define LIGHT_MAGENTA 0x0D
-#define LIGHT_BROWN   0x0E
+#define LIGHT_YELLOW  0x0E
 #define WHITE         0x0F
 
 #define VGA_WIDTH  80
 #define VGA_HEIGHT 25
- 
-// Global Variables
-unsigned int    ScrnRow;
-unsigned int    ScrnCol;
-unsigned char   Color;
-         char*  ScrnBuff;
-unsigned int		Len;
-unsigned int    Index;
-unsigned int    i;
-unsigned int    x;
-unsigned int    y;
-unsigned int    CursorLoc;
-unsigned char   fg;
-unsigned char   bg;
 
-void outb(unsigned short port, unsigned char value)
+typedef unsigned char  byte1;
+typedef unsigned short byte2;
+typedef unsigned int   byte4;
+
+// Global Variables
+byte4    ScrnRow;
+byte4    ScrnCol;
+char*    ScrnBuff;
+byte1    fg;
+byte1    bg;
+byte1    Color;
+
+
+// ************************************
+// outb - talk to the VGA hardware port
+// ************************************
+
+void outb(byte2 port, byte1 value)
 {
   asm volatile ("outb %1, %0" : : "dN" (port), "a" (value));
 }
 
+// ************************
+// MoveCursor - move blinky
+// ************************
+
 void MoveCursor()
 {
-  CursorLoc = ScrnRow * 80 + ScrnCol;
+  byte4 Loc;
+
+  Loc = ScrnRow * 80 + ScrnCol;
   outb(0x3D4, 14);
-  outb(0x3D5, CursorLoc >> 8);
+  outb(0x3D5, Loc >> 8);
   outb(0x3D4, 15);
-  outb(0x3D5, CursorLoc);
+  outb(0x3D5, Loc);
 }
 
 // *****************************
@@ -58,12 +67,52 @@ void MakeColor()
   Color = Color | fg;
 }
 
+// **************************************
+// SetColor - change the foreground color
+// **************************************
+
+void SetColor(char c)
+{
+  switch(c)
+  {
+    case 'B' :
+      fg = LIGHT_BLUE;
+      break;
+    case 'G' :
+      fg = LIGHT_GREEN;
+      break;
+    case 'C' :
+      fg = LIGHT_CYAN;
+      break;
+    case 'R' :
+      fg = LIGHT_RED;
+      break;
+    case 'M' :
+      fg = LIGHT_MAGENTA;
+      break;
+    case 'Y' :
+      fg = LIGHT_YELLOW;
+      break;
+    case 'W' :
+      fg = WHITE;
+      break;
+    case 'N' :
+      fg = LIGHT_GREY;
+      break;
+    default :
+      fg = LIGHT_GREY;
+  }
+  MakeColor();
+}
+
 // ********************************
 // StrLen - return length of string
 // ********************************
-unsigned int StrLen(const char* str)
+
+byte4 StrLen(const char* str)
 {
-  unsigned int Len;
+  byte4 Len;
+
   Len = 0;
   while (str[Len] != 0)
     Len++;
@@ -76,6 +125,8 @@ unsigned int StrLen(const char* str)
 
 void ScrnPutCell(char c)
 {
+  byte4 Index;
+  
   Index = ScrnRow * VGA_WIDTH + ScrnCol;
   Index = Index * 2;
   ScrnBuff[Index] = c;
@@ -100,7 +151,7 @@ void ScrnClear()
       ScrnPutCell(' ');
     }
   }
-  ScrnRow    = 0;
+  ScrnRow = 0;
   ScrnCol = 0;
 }
 
@@ -110,18 +161,6 @@ void ScrnClear()
 
 void ScrnPutChar(char c)
 {
-  if (c == 'c')
-  {
-    fg = LIGHT_CYAN;
-    MakeColor();
-    return;
-  }
-  if (c == 'n')
-  {
-    fg = LIGHT_GREY;
-    MakeColor();
-    return;
-  }
   if (c == '\n')
   {
     ScrnRow++;
@@ -141,11 +180,25 @@ void ScrnPutChar(char c)
   }
 }
 
-// ScrnWrite - write string to termianl
+// ************************************
+// ScrnWrite - write string to terminal
+// ************************************
+
 void ScrnWrite(const char* data)
 {
+  byte4 i;
+  byte4 Len;
+
   Len = StrLen(data);
   for (i = 0; i < Len; i++)
+  {
+    if (data[i] == '&')
+    {
+      i++;
+      SetColor(data[i]);
+      i++;
+    }
     ScrnPutChar(data[i]);
+  }
   MoveCursor();
 }

@@ -8,9 +8,9 @@ void main()
 {
   int i;
   i = 0;
-  while (i < 250000000)
+  while (i < 200000000)
     i++;
   ScrnClear();
-  ScrnWrite("Hello cWorldn from KissOs v.0E!\n");
+  ScrnWrite("&YHello&N &WWorld&N from &BK&Gi&Cs&Rs&MO&Ys&N v.0F!\n");
   ScrnWrite("More stuff!");
 }

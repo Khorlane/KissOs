@@ -1,55 +1,68 @@
 // Hardware text mode color constants
-enum vga_color
-{
-  COLOR_BLACK         = 0,
-  COLOR_BLUE          = 1,
-  COLOR_GREEN         = 2,
-  COLOR_CYAN          = 3,
-  COLOR_RED           = 4,
-  COLOR_MAGENTA       = 5,
-  COLOR_BROWN         = 6,
-  COLOR_LIGHT_GREY    = 7,
-  COLOR_DARK_GREY     = 8,
-  COLOR_LIGHT_BLUE    = 9,
-  COLOR_LIGHT_GREEN   = 10,
-  COLOR_LIGHT_CYAN    = 11,
-  COLOR_LIGHT_RED     = 12,
-  COLOR_LIGHT_MAGENTA = 13,
-  COLOR_LIGHT_BROWN   = 14,
-  COLOR_WHITE         = 15,
-};
+#define BLACK         0x00
+#define BLUE          0x01
+#define GREEN         0x02
+#define CYAN          0x03
+#define RED           0x04
+#define MAGENTA       0x05
+#define BROWN         0x06
+#define LIGHT_GREY    0x07
+#define DARK_GREY     0x08
+#define LIGHT_BLUE    0x09
+#define LIGHT_GREEN   0x0A
+#define LIGHT_CYAN    0x0B
+#define LIGHT_RED     0x0C
+#define LIGHT_MAGENTA 0x0D
+#define LIGHT_BROWN   0x0E
+#define WHITE         0x0F
 
 #define VGA_WIDTH  80
 #define VGA_HEIGHT 25
  
 // Global Variables
-unsigned short  c16;
-unsigned short  color16;
 unsigned int    terminal_row;
 unsigned int    terminal_column;
-unsigned char   terminal_color;
-unsigned short* terminal_buffer;
-unsigned int		ret;
+unsigned char   color;
+         char*  TermBuff;
+unsigned int		len;
 unsigned int    index;
 unsigned int    i;
 unsigned int    x;
 unsigned int    y;
-unsigned int    datalen;
+unsigned int    CursorLoc;
+
+void outb(unsigned short port, unsigned char value)
+{
+  asm volatile ("outb %1, %0" : : "dN" (port), "a" (value));
+}
+
+void MoveCursor()
+{
+  CursorLoc = terminal_row * 80 + terminal_column;
+  outb(0x3D4, 14);
+  outb(0x3D5, CursorLoc >> 8);
+  outb(0x3D4, 15);
+  outb(0x3D5, CursorLoc);
+}
 
 // ********************************************
 // Supporting functions
 // ********************************************
 
-unsigned char make_color(enum vga_color fg, enum vga_color bg)
+void make_color(unsigned char fg, unsigned char bg)
 {
-  return fg | bg << 4;
+  color = bg;
+  color = color << 4;
+  color = color | fg;
 }
- 
-unsigned short make_vgaentry(char c, unsigned char color)
+
+void terminal_putentryat(char c)
 {
-  c16     = c;
-  color16 = color;
-  return c16 | color16 << 8;
+  index = terminal_row * VGA_WIDTH + terminal_column;
+  index = index * 2;
+  TermBuff[index] = c;
+  index++;
+  TermBuff[index] = color;
 }
 
 // *******************
@@ -58,29 +71,22 @@ unsigned short make_vgaentry(char c, unsigned char color)
  
 void terminal_initialize()
 {
-  terminal_row    = 0;
-  terminal_column = 0;
-  terminal_color  = make_color(COLOR_LIGHT_GREY, COLOR_BLUE);
-  terminal_buffer = (unsigned short*) 0xB8000;
-  for (y = 0; y < VGA_HEIGHT; y++)
+  make_color(LIGHT_BLUE, BLACK);
+  TermBuff = (char*) 0xB8000;
+  for (terminal_row = 0; terminal_row < VGA_HEIGHT; terminal_row++)
   {
-    for (x = 0; x < VGA_WIDTH; x++)
+    for (terminal_column = 0; terminal_column < VGA_WIDTH; terminal_column++)
     {
-      index = y * VGA_WIDTH + x;
-      terminal_buffer[index] = make_vgaentry(' ', terminal_color);
+      terminal_putentryat(' ');
     }
   }
+  terminal_row    = 0;
+  terminal_column = 0;
 }
 
 // *************************************
 // Write String and supporting functions
 // *************************************
-
-void terminal_putentryat(char c)
-{
-  index = terminal_row * VGA_WIDTH + terminal_column;
-  terminal_buffer[index] = make_vgaentry(c, terminal_color);
-}
 
 void terminal_putchar(char c)
 {
@@ -105,15 +111,17 @@ void terminal_putchar(char c)
  
 unsigned int strlen(const char* str)
 {
-  ret = 0;
-  while (str[ret] != 0)
-    ret++;
-  return ret;
+  unsigned int len;
+  len = 0;
+  while (str[len] != 0)
+    len++;
+  return len;
 }
 
 void terminal_writestring(const char* data)
 {
-  datalen = strlen(data);
-  for (i = 0; i < datalen; i++)
+  len = strlen(data);
+  for (i = 0; i < len; i++)
     terminal_putchar(data[i]);
+  MoveCursor();
 }

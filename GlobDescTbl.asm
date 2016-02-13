@@ -3,15 +3,15 @@
 ;------------------------------------
 
 ; Mark the start of the GDT
-gdt_start:
+GlobDescTblStart:
 
 ; The required null descriptor
-gdt_null:
+GlobDescTblNull:
   dd    0x0                     ; 4 bytes of zeros
   dd    0x0                     ; 4 more bytes of zeros for a total of 8 bytes
 
 ; The code descriptor
-gdt_code:
+GlobDescTblCode:
   dw    0xffff                  ; Segment Limit part 1
   dw    0x0                     ; Base Address part 1
   db    0x0                     ; Base Address part 2
@@ -20,7 +20,7 @@ gdt_code:
   db    0x0                     ; Base Address part 3
 
 ; The data descriptor
-gdt_data:
+GlobDescTblData:
   dw    0xffff                  ; Segment Limit part 1
   dw    0x0                     ; Base Address part 1
   db    0x0                     ; Base Address part 2
@@ -29,17 +29,19 @@ gdt_data:
   db    0x0                     ; Base Address part 3
 
 ; Mark the end of the GDT
-gdt_end:
+GlobDescTblEnd:
 
 ;---------------------
 ; The GDT descriptor -
 ;---------------------
-gdt_descriptor:
-  dw    gdt_end - gdt_start - 1 ; Size of the GDT
-  dd    gdt_start               ; Address of the GDT
+
+GlobDescTblDescriptor:
+  dw    GlobDescTblEnd - GlobDescTblStart - 1 ; Size of the GDT
+  dd    GlobDescTblStart                      ; Address of the GDT
 
 ;------------------------------------------------
 ; Handy Constants for Setting Segment Registers -
 ;------------------------------------------------
-CODE_SEG equ gdt_code - gdt_start
-DATA_SEG equ gdt_data - gdt_start
+
+CODE_SEG equ GlobDescTblCode - GlobDescTblStart
+DATA_SEG equ GlobDescTblData - GlobDescTblStart

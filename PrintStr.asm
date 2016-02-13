@@ -1,11 +1,16 @@
-print_string:
+;-----------------
+; Print a string -
+;-----------------
+
+PrintStr:
   pusha
   mov   ah,0x0e
-loop:
+
+PrintStrLoop:
   mov   al,[bx]
   int   0x10
   add   bx,1
   cmp   al,0
-  jne   loop
+  jne   PrintStrLoop
   popa
   ret

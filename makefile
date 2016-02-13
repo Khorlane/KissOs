@@ -1,37 +1,41 @@
+#---------------
+# Build KissOs -
+#---------------
+
 # Make requires that first character of a recipe is a TAB!!
 
 # Build it all
-all : kissos.bin
+all : KissOs.bin
 
-# Build kissos.bin
-kissos.bin : boot_sect.bin kernel.bin
-	cat boot_sect.bin kernel.bin > kissos.bin
+# Build KissOs.bin
+KissOs.bin : BootSector.bin Kernel.bin
+	cat BootSector.bin Kernel.bin > KissOs.bin
 
-# Build kernel.bin
-kernel.bin : kernel_entry.o kernel.o screen.o
-	ld -o kernel.bin -Ttext 0x1000 kernel_entry.o kernel.o screen.o --oformat binary --entry main
+# Build Kernel.bin
+Kernel.bin : KernelEntry.o Kernel.o Screen.o
+	ld -o Kernel.bin -Ttext 0x1000 KernelEntry.o Kernel.o Screen.o --oformat binary --entry main
 
-# Build screen.o
-screen.o : screen.c
-	gcc -ffreestanding -c screen.c -o screen.o
+# Build Screen.o
+Screen.o : Screen.c
+	gcc -ffreestanding -c Screen.c -o Screen.o
 
-# Build kernel.o
-kernel.o : kernel.c
-	gcc -ffreestanding -c kernel.c -o kernel.o
+# Build Kernel.o
+Kernel.o : Kernel.c
+	gcc -ffreestanding -c Kernel.c -o Kernel.o
 
-# Build kernel_entry.o
-kernel_entry.o : kernel_entry.asm
-	nasm kernel_entry.asm -f elf -o kernel_entry.o
+# Build KernelEntry.o
+KernelEntry.o : KernelEntry.asm
+	nasm KernelEntry.asm -f elf -o KernelEntry.o
 
 # Build the boot sector 
-boot_sect.bin : boot_sect.asm
-	nasm boot_sect.asm -f bin -o boot_sect.bin
+BootSector.bin : BootSector.asm
+	nasm BootSector.asm -f bin -o BootSector.bin
 
 # Clean Up
 clean :
-	rm -fr kissos.bin
-	rm -fr kernel.bin
-	rm -fr boot_sect.bin
-	rm -fr kernel_entry.o
-	rm -fr kernel.o
-	rm -fr screen.o
+	rm -fr KissOs.bin
+	rm -fr Kernel.bin
+	rm -fr BootSector.bin
+	rm -fr KernelEntry.o
+	rm -fr Kernel.o
+	rm -fr Screen.o
